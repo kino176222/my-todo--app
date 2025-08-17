@@ -48,6 +48,23 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
   }>({ red: 0, green: 0, blue: 0, yellow: 0, purple: 0 });
   const [flashEffect, setFlashEffect] = useState<{active: boolean, intensity: number, time: number} | null>(null);
   const [laneFlashes, setLaneFlashes] = useState<{[lane: number]: {active: boolean, time: number, intensity: number}}>({});
+  const [symphogearEffect, setSymphogearEffect] = useState<{
+    active: boolean, 
+    intensity: number, 
+    time: number, 
+    shakeX: number, 
+    shakeY: number,
+    colorShift: number
+  } | null>(null);
+  const [starAccumulation, setStarAccumulation] = useState<{
+    id: string,
+    x: number,
+    y: number,
+    rotation: number,
+    scale: number,
+    time: number,
+    glowIntensity: number
+  }[]>([]);
 
   const LANE_COUNT = 4;
   const NOTE_SPEED = 100; // ピクセル/秒（遅くして簡単に）
@@ -690,7 +707,22 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
         
         // 通常コンボ数を増加
         const newComboCount = comboCount + 1;
+        console.log('🔥 COMBO COUNT UPDATE:', comboCount, '->', newComboCount);
         setComboCount(newComboCount);
+        
+        // 🌟 コンボ毎に⭐を画面に蓄積
+        const newStar = {
+          id: `star-${Date.now()}-${Math.random()}`,
+          x: Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1, // 画面の10-90%の範囲
+          y: Math.random() * window.innerHeight * 0.6 + window.innerHeight * 0.2, // 画面の20-80%の範囲
+          rotation: Math.random() * 360,
+          scale: 0.5 + Math.random() * 0.5, // 0.5-1.0のサイズ
+          time: Date.now(),
+          glowIntensity: 0.5 + Math.random() * 0.5
+        };
+        
+        setStarAccumulation(prev => [...prev, newStar]);
+        console.log('⭐ STAR ACCUMULATED! Total stars:', starAccumulation.length + 1);
         
         // スコア計算（コンボボーナス適用）
         const comboBonus = newComboCount >= 5 ? 1.5 : 1.0;
@@ -940,6 +972,112 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
             }, i * 100); // 連鎖の時間差
           }
           
+          // 🎆 SYMPHOGEAR級コンボエフェクト判定（handleKeyDown版）
+          console.log('🎯🎯🎯 COMBO EFFECT CHECK (KeyDown) 🎯🎯🎯');
+          console.log('🎯 newComboCount:', newComboCount);
+          console.log('🎯 comboCount:', comboCount);
+          console.log('🎯 newComboCount % 5:', newComboCount % 5);
+          console.log('🎯 Will trigger SYMPHOGEAR?:', newComboCount > 0 && newComboCount % 5 === 0);
+          
+          // 🎆 50コンボ大爆発チェック
+          // 🎭 100コンボ究極シンフォギア！！！
+          if (newComboCount === 100) {
+            console.log('🎭🔥💥 100 COMBO ULTIMATE SYMPHOGEAR!!! 💥🔥🎭');
+            console.log('ﾄﾞﾋｭｩｩｩｩﾝシンフォギアァァァァ!!!ｷｭｷｭｷｭｷｭｲﾝ!ｷｭｷｭｷｭｷｭｲﾝ!');
+            
+            // 究極効果音を再生
+            playUltimateSymphogearSound();
+            
+            // 究極画面エフェクト
+            setSymphogearEffect({
+              active: true,
+              intensity: 5.0, // 究極の5倍
+              time: Date.now(),
+              shakeX: 100, // 究極シェイク
+              shakeY: 100,
+              colorShift: 300 // 究極カラーシフト
+            });
+            
+            setTimeout(() => {
+              setSymphogearEffect(null);
+            }, 10000); // 10秒間の究極演出
+            
+            // 究極バイブレーション
+            if (navigator.vibrate) {
+              const ultimatePattern = [
+                500, 200, 800, 300, 1000, 400, 1200, 500,
+                300, 100, 400, 150, 500, 200, 600, 250,
+                1500, 1000, 2000
+              ];
+              navigator.vibrate(ultimatePattern);
+            }
+          }
+          
+          if (newComboCount === 50) {
+            console.log('💥💥💥 50 COMBO MEGA EXPLOSION!!! 💥💥💥');
+            
+            // ⭐全爆発エフェクト
+            setStarAccumulation([]); // 全ての⭐をクリア
+            
+            // 超強力画面エフェクト
+            setSymphogearEffect({
+              active: true,
+              intensity: 2.0, // 通常の2倍
+              time: Date.now(),
+              shakeX: 40, // 通常の2倍
+              shakeY: 40,
+              colorShift: 100 // 通常の2倍
+            });
+            
+            setTimeout(() => {
+              setSymphogearEffect(null);
+            }, 3000); // 3秒間
+            
+            // 50コンボ専用超強力バイブレーション
+            if (navigator.vibrate) {
+              const mega50VibratePattern = [
+                200, 100, 300, 100, 400, 150, 500, 200,
+                600, 100, 700, 150, 800, 200, 1000
+              ];
+              navigator.vibrate(mega50VibratePattern);
+            }
+            
+            console.log('⭐ ALL STARS EXPLODED! 50 COMBO ACHIEVED!');
+          }
+          
+          if (newComboCount > 0 && newComboCount % 5 === 0) {
+            // 🎺🔥 SYMPHOGEAR級「キーーーン」超絶効果音
+            console.log('🎺🔥 SYMPHOGEAR COMBO SOUND TRIGGER!!! Combo:', newComboCount);
+            playComboSound(newComboCount);
+            
+            // 🔥 SYMPHOGEAR級画面大爆発エフェクト
+            const shakeIntensity = Math.min(20, 5 + newComboCount * 2);
+            const colorShiftIntensity = Math.min(50, 20 + newComboCount * 3);
+            
+            setSymphogearEffect({
+              active: true,
+              intensity: 1.0,
+              time: Date.now(),
+              shakeX: shakeIntensity,
+              shakeY: shakeIntensity,
+              colorShift: colorShiftIntensity
+            });
+            
+            // 🎮 SYMPHOGEAR級超強力バイブレーション
+            if (navigator.vibrate) {
+              const megaVibratePattern = [
+                100, 50, 200, 50, 150, 100, 300, 100, 
+                250, 50, 400, 200, 100, 50, 500
+              ]; // 超複雑なパターン
+              navigator.vibrate(megaVibratePattern);
+            }
+            
+            // エフェクトを2秒で終了
+            setTimeout(() => {
+              setSymphogearEffect(null);
+            }, 2000);
+          }
+          
         } catch (error) {
           console.log('🎮 Epic effect failed:', error);
         }
@@ -947,6 +1085,7 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
       } else {
         console.log('💔 MISS! No note found at lane', targetLane);
         // コンボリセット
+        console.log('💥 COMBO RESET! From', comboCount, 'to 0 (MISS)');
         setComboCount(0);
         
         // ミス処理
@@ -1045,6 +1184,7 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
             scoreRef.current = newScore;
             return newScore;
           });
+          console.log('💥 COMBO RESET! From', comboCount, 'to 0 (MISSED NOTE)');
           setComboCount(0);
           
           // ミスエフェクト
@@ -1159,9 +1299,14 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
   };
 
   const handleLaneTap = (lane: number) => {
+    console.log('🚨🚨🚨 HANDLE LANE TAP CALLED 🚨🚨🚨');
     console.log('🎯【V3.0 TAP】Lane:', lane, 'Game:', gameStarted);
+    console.log('🎯 Time:', Date.now());
     
-    if (!gameStarted) return;
+    if (!gameStarted) {
+      console.log('🚫 Game not started, returning');
+      return;
+    }
 
     // notesRefから現在のノーツを取得
     const currentNotes = notesRef.current;
@@ -1216,7 +1361,22 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
       
       // コンボ数を増加
       const newComboCount = comboCount + 1;
+      console.log('🔥 COMBO COUNT UPDATE (2nd handler):', comboCount, '->', newComboCount);
       setComboCount(newComboCount);
+      
+      // 🌟 コンボ毎に⭐を画面に蓄積（2nd handler版）
+      const newStar = {
+        id: `star-2nd-${Date.now()}-${Math.random()}`,
+        x: Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1,
+        y: Math.random() * window.innerHeight * 0.6 + window.innerHeight * 0.2,
+        rotation: Math.random() * 360,
+        scale: 0.5 + Math.random() * 0.5,
+        time: Date.now(),
+        glowIntensity: 0.5 + Math.random() * 0.5
+      };
+      
+      setStarAccumulation(prev => [...prev, newStar]);
+      console.log('⭐ STAR ACCUMULATED (2nd)! Total stars:', starAccumulation.length + 1);
       
       const bonusScore = newComboCount >= 5 ? 200 : 100; // 5コンボ以上でボーナス
       setScore(prev => {
@@ -1350,11 +1510,44 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
         
         // 5. コンボ達成時の特別エフェクト
         const currentCombo = newComboCount || comboCount + 1; // フォールバック
-        console.log('🎯 Combo check:', currentCombo, 'mod 5:', currentCombo % 5);
+        console.log('🎯🎯🎯 COMBO EFFECT CHECK 🎯🎯🎯');
+        console.log('🎯 newComboCount:', newComboCount);
+        console.log('🎯 comboCount:', comboCount);
+        console.log('🎯 currentCombo:', currentCombo);
+        console.log('🎯 currentCombo % 5:', currentCombo % 5);
+        console.log('🎯 Will trigger?:', currentCombo > 0 && currentCombo % 5 === 0);
+        
         if (currentCombo > 0 && currentCombo % 5 === 0) {
           // 5コンボ毎に「ズキューン」
           console.log('🎺 COMBO SOUND TRIGGER! Combo:', currentCombo);
           playComboSound(currentCombo);
+          
+          // 🔥 SYMPHOGEAR級画面大爆発エフェクト
+          const shakeIntensity = Math.min(20, 5 + currentCombo * 2);
+          const colorShiftIntensity = Math.min(50, 20 + currentCombo * 3);
+          
+          setSymphogearEffect({
+            active: true,
+            intensity: 1.0,
+            time: Date.now(),
+            shakeX: shakeIntensity,
+            shakeY: shakeIntensity,
+            colorShift: colorShiftIntensity
+          });
+          
+          // 🎮 SYMPHOGEAR級超強力バイブレーション
+          if (navigator.vibrate) {
+            const megaVibratePattern = [
+              100, 50, 200, 50, 150, 100, 300, 100, 
+              250, 50, 400, 200, 100, 50, 500
+            ]; // 超複雑なパターン
+            navigator.vibrate(megaVibratePattern);
+          }
+          
+          // エフェクトを2秒で終了
+          setTimeout(() => {
+            setSymphogearEffect(null);
+          }, 2000);
           
           // 画面端から端への光線エフェクト
           setTimeout(() => {
@@ -1380,6 +1573,7 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
       console.log('💔 TAP MISS ===', 'Lane:', lane);
       
       // コンボリセット
+      console.log('💥 COMBO RESET! From', comboCount, 'to 0 (TAP MISS)');
       setComboCount(0);
       
       setScore(prev => {
@@ -1515,86 +1709,265 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
   };
 
   const playComboSound = (combo: number) => {
-    console.log('🎺 playComboSound called! Combo:', combo);
+    console.log('🎺🔥 SYMPHOGEAR COMBO SOUND TRIGGER!!! Combo:', combo);
     try {
-      // 「ズキューン」電子音で脳汁放出
-      console.log('🎺 Creating AudioContext for combo sound...');
+      // シンフォギア級「キーーーン」超絶効果音
+      console.log('🎺 Creating Symphogear-level AudioContext...');
       const audioContext = new AudioContext();
       const masterGain = audioContext.createGain();
       masterGain.connect(audioContext.destination);
-      masterGain.gain.setValueAtTime(0.6, audioContext.currentTime);
       
-      // ディストーションエフェクト
+      // コンボレベルに応じて音量爆上げ
+      const comboVolume = Math.min(0.9, 0.7 + combo * 0.02);
+      masterGain.gain.setValueAtTime(comboVolume, audioContext.currentTime);
+      console.log('🎺 Combo volume set to:', comboVolume);
+      
+      // 🔥 シンフォギア風超強化ディストーション
       const distortion = audioContext.createWaveShaper();
       const samples = 44100;
       const curve = new Float32Array(samples);
-      const deg = Math.PI / 180;
       
       for (let i = 0; i < samples; i++) {
         const x = (i * 2) / samples - 1;
-        curve[i] = ((3 + combo * 0.5) * x * 20 * deg) / (Math.PI + combo * 0.2 * Math.abs(x));
+        // より強烈なディストーション（シンフォギア風）
+        curve[i] = ((10 + combo * 2) * x * 25) / (Math.PI + 3 * Math.abs(x));
+        curve[i] = Math.tanh(curve[i] * 3); // さらなる歪み
       }
       distortion.curve = curve;
       distortion.oversample = '4x';
       distortion.connect(masterGain);
       
-      // メインズキューン音
+      // 🎵 超強力リバーブ（シンフォギア的空間感）
+      const convolver = audioContext.createConvolver();
+      const impulseLength = audioContext.sampleRate * 3; // 3秒リバーブ
+      const impulse = audioContext.createBuffer(2, impulseLength, audioContext.sampleRate);
+      
+      for (let channel = 0; channel < 2; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < impulseLength; i++) {
+          channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impulseLength, 1.5);
+        }
+      }
+      convolver.buffer = impulse;
+      convolver.connect(masterGain);
+      
+      // 🌟 メインの「キーーーーーーン」音（シンフォギア風）
       const mainOsc = audioContext.createOscillator();
       const mainGain = audioContext.createGain();
+      const mainFilter = audioContext.createBiquadFilter();
       
-      mainOsc.connect(mainGain);
+      mainOsc.connect(mainFilter);
+      mainFilter.connect(mainGain);
       mainGain.connect(distortion);
+      mainGain.connect(convolver); // リバーブにも送る
       
-      // 周波数スウィープ（ズキューン効果）
-      const startFreq = 200 + combo * 50;
-      const endFreq = 2000 + combo * 200;
+      // 超高周波「キーーーン」効果
+      mainOsc.type = 'square'; // より鋭い音
+      const startFreq = 1500 + combo * 200; // より高い開始音
+      const peakFreq = 4000 + combo * 500;  // 超高域まで
+      const endFreq = 800 + combo * 100;
       
+      // フィルターで「キーン」感を強調
+      mainFilter.type = 'peaking';
+      mainFilter.frequency.setValueAtTime(peakFreq, audioContext.currentTime);
+      mainFilter.Q.setValueAtTime(15, audioContext.currentTime); // 超鋭いQ
+      mainFilter.gain.setValueAtTime(20, audioContext.currentTime); // 強烈なブースト
+      
+      // 3段階の「キーーーーーン」スウィープ
       mainOsc.frequency.setValueAtTime(startFreq, audioContext.currentTime);
-      mainOsc.frequency.exponentialRampToValueAtTime(endFreq, audioContext.currentTime + 0.3);
-      mainOsc.frequency.exponentialRampToValueAtTime(startFreq * 0.5, audioContext.currentTime + 0.6);
+      mainOsc.frequency.exponentialRampToValueAtTime(peakFreq, audioContext.currentTime + 0.15); // 急上昇
+      mainOsc.frequency.linearRampToValueAtTime(peakFreq * 1.2, audioContext.currentTime + 0.25); // さらに上昇
+      mainOsc.frequency.exponentialRampToValueAtTime(endFreq, audioContext.currentTime + 0.8); // ゆっくり下降
       
-      mainGain.gain.setValueAtTime(0.4, audioContext.currentTime);
-      mainGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
+      mainGain.gain.setValueAtTime(0.6, audioContext.currentTime);
+      mainGain.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.15); // ピークで音量UP
+      mainGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.2); // 長めの余韻
       
       mainOsc.start(audioContext.currentTime);
-      mainOsc.stop(audioContext.currentTime + 0.8);
+      mainOsc.stop(audioContext.currentTime + 1.2);
+      console.log('🎺 Main KEEN sound created with freq:', startFreq, '->', peakFreq, '->', endFreq);
       
-      // 高音域キラキラ（電子音的）
-      for (let i = 0; i < 3; i++) {
+      // ✨ 超豪華キラキラアルペジオ（シンフォギア風）
+      const arpeggio = [0, 4, 7, 12, 16, 19, 24]; // Cメジャーアルペジオ
+      for (let i = 0; i < arpeggio.length; i++) {
         const osc = audioContext.createOscillator();
         const gain = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
         
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(masterGain);
+        gain.connect(convolver); // リバーブに送る
         
-        osc.type = 'square'; // 電子音っぽく
-        osc.frequency.setValueAtTime(1500 + i * 500 + combo * 100, audioContext.currentTime + i * 0.1);
+        osc.type = 'triangle'; // よりクリアな音
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(3000 + arpeggio[i] * 100, audioContext.currentTime);
+        filter.Q.setValueAtTime(5, audioContext.currentTime);
         
-        gain.gain.setValueAtTime(0.15, audioContext.currentTime + i * 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + i * 0.1 + 0.4);
+        const noteFreq = 2000 + arpeggio[i] * 200 + combo * 150;
+        osc.frequency.setValueAtTime(noteFreq, audioContext.currentTime + i * 0.08);
         
-        osc.start(audioContext.currentTime + i * 0.1);
-        osc.stop(audioContext.currentTime + i * 0.1 + 0.4);
+        gain.gain.setValueAtTime(0.2, audioContext.currentTime + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + i * 0.08 + 0.6);
+        
+        osc.start(audioContext.currentTime + i * 0.08);
+        osc.stop(audioContext.currentTime + i * 0.08 + 0.6);
+      }
+      console.log('🎺 Arpeggio sparkles created, count:', arpeggio.length);
+      
+      // 💥 シンフォギア級爆発的低音ドンドンドン
+      for (let i = 0; i < 3; i++) {
+        const bassOsc = audioContext.createOscillator();
+        const bassGain = audioContext.createGain();
+        const bassFilter = audioContext.createBiquadFilter();
+        
+        bassOsc.connect(bassFilter);
+        bassFilter.connect(bassGain);
+        bassGain.connect(masterGain);
+        
+        bassOsc.type = 'sawtooth'; // より迫力のある音
+        bassFilter.type = 'lowpass';
+        bassFilter.frequency.setValueAtTime(200, audioContext.currentTime);
+        bassFilter.Q.setValueAtTime(5, audioContext.currentTime);
+        
+        const bassFreq = 60 - i * 15; // だんだん低音に
+        bassOsc.frequency.setValueAtTime(bassFreq, audioContext.currentTime + i * 0.15);
+        bassOsc.frequency.exponentialRampToValueAtTime(bassFreq * 0.5, audioContext.currentTime + i * 0.15 + 0.3);
+        
+        bassGain.gain.setValueAtTime(0.6, audioContext.currentTime + i * 0.15);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + i * 0.15 + 0.8);
+        
+        bassOsc.start(audioContext.currentTime + i * 0.15);
+        bassOsc.stop(audioContext.currentTime + i * 0.15 + 0.8);
       }
       
-      // 低音ドンドン（コンボ強調）
-      const bassOsc = audioContext.createOscillator();
-      const bassGain = audioContext.createGain();
-      
-      bassOsc.connect(bassGain);
-      bassGain.connect(masterGain);
-      
-      bassOsc.frequency.setValueAtTime(80, audioContext.currentTime);
-      bassOsc.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.2);
-      
-      bassGain.gain.setValueAtTime(0.5, audioContext.currentTime);
-      bassGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
-      
-      bassOsc.start(audioContext.currentTime);
-      bassOsc.stop(audioContext.currentTime + 0.5);
+      console.log('🎺💥 SYMPHOGEAR COMBO SOUND COMPLETE! Total duration: ~1.5s');
       
     } catch (error) {
-      console.log('Combo sound failed:', error);
+      console.error('🎺❌ Symphogear combo sound FAILED:', error);
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+  };
+
+  const playUltimateSymphogearSound = () => {
+    console.log('🎭🔥 ULTIMATE SYMPHOGEAR SOUND SYSTEM ACTIVATE!!!');
+    try {
+      // ﾄﾞﾋｭｩｩｩｩﾝシンフォギアァァァァ!!!ｷｭｷｭｷｭｷｭｲﾝ!を完全再現
+      const audioContext = new AudioContext();
+      const masterGain = audioContext.createGain();
+      masterGain.connect(audioContext.destination);
+      masterGain.gain.setValueAtTime(0.9, audioContext.currentTime); // 最大音量
+      
+      // 🎵 ﾄﾞﾋｭｩｩｩｩﾝ (0-1.5秒)
+      const dohuun = audioContext.createOscillator();
+      const dohuunGain = audioContext.createGain();
+      const dohuunFilter = audioContext.createBiquadFilter();
+      
+      dohuun.connect(dohuunFilter);
+      dohuunFilter.connect(dohuunGain);
+      dohuunGain.connect(masterGain);
+      
+      dohuun.type = 'sawtooth';
+      dohuun.frequency.setValueAtTime(120, audioContext.currentTime);
+      dohuun.frequency.exponentialRampToValueAtTime(60, audioContext.currentTime + 0.3);
+      dohuun.frequency.linearRampToValueAtTime(40, audioContext.currentTime + 1.5);
+      
+      dohuunFilter.type = 'lowpass';
+      dohuunFilter.frequency.setValueAtTime(800, audioContext.currentTime);
+      dohuunFilter.Q.setValueAtTime(10, audioContext.currentTime);
+      
+      dohuunGain.gain.setValueAtTime(0.8, audioContext.currentTime);
+      dohuunGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.5);
+      
+      dohuun.start(audioContext.currentTime);
+      dohuun.stop(audioContext.currentTime + 1.5);
+      
+      // 🎵 シンフォギアァァァァ (1.5-3秒)
+      const symphogear = audioContext.createOscillator();
+      const symphogearGain = audioContext.createGain();
+      const symphogearDistortion = audioContext.createWaveShaper();
+      
+      // 超強力ディストーション
+      const curve = new Float32Array(44100);
+      for (let i = 0; i < 44100; i++) {
+        const x = (i * 2) / 44100 - 1;
+        curve[i] = Math.tanh(x * 50); // 究極歪み
+      }
+      symphogearDistortion.curve = curve;
+      symphogearDistortion.oversample = '4x';
+      
+      symphogear.connect(symphogearDistortion);
+      symphogearDistortion.connect(symphogearGain);
+      symphogearGain.connect(masterGain);
+      
+      symphogear.type = 'square';
+      symphogear.frequency.setValueAtTime(800, audioContext.currentTime + 1.5);
+      symphogear.frequency.linearRampToValueAtTime(1200, audioContext.currentTime + 2.5);
+      symphogear.frequency.exponentialRampToValueAtTime(2000, audioContext.currentTime + 3.0);
+      
+      symphogearGain.gain.setValueAtTime(0.7, audioContext.currentTime + 1.5);
+      symphogearGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 3.0);
+      
+      symphogear.start(audioContext.currentTime + 1.5);
+      symphogear.stop(audioContext.currentTime + 3.0);
+      
+      // 🎵 ｷｭｷｭｷｭｷｭｲﾝ! 連続攻撃 (3-8秒)
+      const kyukyuTimes = [3.0, 3.3, 3.6, 3.9, 4.2, 4.5, 4.8, 5.1, 5.4, 5.7, 6.0, 6.3, 6.6, 6.9, 7.2, 7.5];
+      
+      kyukyuTimes.forEach((startTime, index) => {
+        const kyukyu = audioContext.createOscillator();
+        const kyukyuGain = audioContext.createGain();
+        const kyukyuFilter = audioContext.createBiquadFilter();
+        
+        kyukyu.connect(kyukyuFilter);
+        kyukyuFilter.connect(kyukyuGain);
+        kyukyuGain.connect(masterGain);
+        
+        kyukyu.type = 'triangle';
+        const baseFreq = 3000 + index * 200;
+        kyukyu.frequency.setValueAtTime(baseFreq, audioContext.currentTime + startTime);
+        kyukyu.frequency.exponentialRampToValueAtTime(baseFreq * 2, audioContext.currentTime + startTime + 0.1);
+        kyukyu.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, audioContext.currentTime + startTime + 0.25);
+        
+        kyukyuFilter.type = 'peaking';
+        kyukyuFilter.frequency.setValueAtTime(baseFreq * 1.5, audioContext.currentTime + startTime);
+        kyukyuFilter.Q.setValueAtTime(20, audioContext.currentTime + startTime);
+        kyukyuFilter.gain.setValueAtTime(15, audioContext.currentTime + startTime);
+        
+        kyukyuGain.gain.setValueAtTime(0.4, audioContext.currentTime + startTime);
+        kyukyuGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + 0.25);
+        
+        kyukyu.start(audioContext.currentTime + startTime);
+        kyukyu.stop(audioContext.currentTime + startTime + 0.25);
+      });
+      
+      // 🎵 ﾎﾟｫﾛﾎﾟﾎﾟﾎﾟﾎﾟﾍﾟﾍﾟﾍﾟﾍﾟﾋﾟﾋﾟﾋﾟﾋﾟﾋﾟｰﾍﾟﾍﾟﾍﾟﾍﾟﾍﾟﾍﾟﾍﾟﾍﾟｰ♪ (8-12秒)
+      for (let i = 0; i < 50; i++) {
+        const randomTime = 8.0 + Math.random() * 4.0;
+        const randomFreq = 500 + Math.random() * 2000;
+        
+        const random = audioContext.createOscillator();
+        const randomGain = audioContext.createGain();
+        
+        random.connect(randomGain);
+        randomGain.connect(masterGain);
+        
+        random.type = Math.random() > 0.5 ? 'square' : 'sawtooth';
+        random.frequency.setValueAtTime(randomFreq, audioContext.currentTime + randomTime);
+        random.frequency.exponentialRampToValueAtTime(randomFreq * (0.5 + Math.random()), audioContext.currentTime + randomTime + 0.2);
+        
+        randomGain.gain.setValueAtTime(0.1 + Math.random() * 0.2, audioContext.currentTime + randomTime);
+        randomGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + randomTime + 0.2);
+        
+        random.start(audioContext.currentTime + randomTime);
+        random.stop(audioContext.currentTime + randomTime + 0.2);
+      }
+      
+      console.log('🎭💥 ULTIMATE SYMPHOGEAR SOUND COMPLETE! Duration: 12 seconds');
+      
+    } catch (error) {
+      console.error('🎭❌ Ultimate Symphogear sound FAILED:', error);
     }
   };
 
@@ -1625,6 +1998,69 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    // 🔥 SYMPHOGEAR級超大爆発エフェクト描画
+    if (symphogearEffect && symphogearEffect.active) {
+      ctx.save();
+      
+      const elapsed = Date.now() - symphogearEffect.time;
+      const fadeRatio = Math.max(0, 1 - elapsed / 2000); // 2秒でフェード
+      
+      if (fadeRatio > 0) {
+        // 画面シェイク効果
+        const shakeX = (Math.random() - 0.5) * symphogearEffect.shakeX * fadeRatio;
+        const shakeY = (Math.random() - 0.5) * symphogearEffect.shakeY * fadeRatio;
+        ctx.translate(shakeX, shakeY);
+        
+        // 色相変化による激しいフラッシュ
+        const colorShift = symphogearEffect.colorShift * fadeRatio;
+        const flashHue = (currentTime * 200 + colorShift) % 360;
+        
+        // 複数の爆発的フラッシュレイヤー
+        const flashAlpha = 0.3 * fadeRatio * (1 + Math.sin(elapsed * 0.02) * 0.5);
+        
+        // レイヤー1: 全画面カラーフラッシュ
+        ctx.fillStyle = `hsla(${flashHue}, 100%, 50%, ${flashAlpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // レイヤー2: 放射状グラデーション爆発
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const explosionGradient = ctx.createRadialGradient(
+          centerX, centerY, 0,
+          centerX, centerY, Math.max(canvas.width, canvas.height)
+        );
+        
+        explosionGradient.addColorStop(0, `hsla(${flashHue + 60}, 100%, 80%, ${flashAlpha * 0.8})`);
+        explosionGradient.addColorStop(0.3, `hsla(${flashHue + 120}, 100%, 60%, ${flashAlpha * 0.5})`);
+        explosionGradient.addColorStop(1, `hsla(${flashHue + 180}, 100%, 40%, 0)`);
+        
+        ctx.fillStyle = explosionGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // レイヤー3: 光線エフェクト
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2 + elapsed * 0.01;
+          const x1 = centerX + Math.cos(angle) * 50;
+          const y1 = centerY + Math.sin(angle) * 50;
+          const x2 = centerX + Math.cos(angle) * canvas.width;
+          const y2 = centerY + Math.sin(angle) * canvas.height;
+          
+          const beamGradient = ctx.createLinearGradient(x1, y1, x2, y2);
+          beamGradient.addColorStop(0, `hsla(${flashHue + i * 45}, 100%, 90%, ${flashAlpha * 0.6})`);
+          beamGradient.addColorStop(1, `hsla(${flashHue + i * 45}, 100%, 50%, 0)`);
+          
+          ctx.strokeStyle = beamGradient;
+          ctx.lineWidth = 20 * fadeRatio;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+      }
+      
+      ctx.restore();
+    }
+    
     // 背景パーティクル（星空効果）
     for (let i = 0; i < 50; i++) {
       const x = (i * 123.456 * currentTime) % canvas.width;
@@ -1636,6 +2072,49 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
       ctx.arc(x, y, 1 + Math.sin(currentTime + i) * 0.5, 0, Math.PI * 2);
       ctx.fill();
     }
+    
+    // 🌟 コンボ蓄積⭐描画（超豪華版）
+    starAccumulation.forEach((star, index) => {
+      const elapsed = Date.now() - star.time;
+      const age = elapsed / 1000; // 秒
+      
+      // 時間経過で回転・脈動
+      const rotationSpeed = 50 + index * 10; // 個別の回転速度
+      const currentRotation = star.rotation + elapsed * rotationSpeed / 1000;
+      const pulse = Math.sin(elapsed * 0.005 + index) * 0.3 + 0.7; // 脈動
+      const glow = star.glowIntensity * pulse;
+      
+      ctx.save();
+      ctx.translate(star.x, star.y);
+      ctx.rotate((currentRotation * Math.PI) / 180);
+      ctx.scale(star.scale * pulse, star.scale * pulse);
+      
+      // 多重グロー効果
+      for (let layer = 3; layer >= 0; layer--) {
+        const layerSize = 15 + layer * 8;
+        const layerAlpha = (glow * (4 - layer)) / 4;
+        
+        // グラデーション作成
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, layerSize);
+        gradient.addColorStop(0, `rgba(255, 255, 100, ${layerAlpha})`);
+        gradient.addColorStop(0.7, `rgba(255, 200, 0, ${layerAlpha * 0.8})`);
+        gradient.addColorStop(1, `rgba(255, 150, 0, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, layerSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // ⭐本体描画
+      ctx.fillStyle = `rgba(255, 255, 255, ${glow})`;
+      ctx.font = `${20 * star.scale * pulse}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⭐', 0, 0);
+      
+      ctx.restore();
+    });
     
     // Canvas描画テスト：画面の4隅に白い四角を表示
     ctx.fillStyle = "#FFFFFF";

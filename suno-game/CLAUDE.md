@@ -198,7 +198,47 @@ SUNOで作成した自分の楽曲で音ゲーを楽しめるWebアプリを開�
 - 音ゲー設計パターン
 - リズムゲーム判定アルゴリズム
 
+## 開発セッション記録
+
+### 2025-08-20 セッション
+**現在のgit状態**:
+```
+M app/page.tsx                     # メイン画面の変更
+M components/game-screen.tsx       # ゲーム画面コンポーネント修正
+M lib/supabase/client.ts          # Supabaseクライアント設定
+M lib/supabase/middleware.ts      # 認証ミドルウェア
+M lib/supabase/server.ts          # サーバーサイド設定
+D middleware.ts                   # 削除予定
+M package.json                    # 依存関係更新
+```
+
+**新規追加ファイル**:
+- DELETE_LIST.md (削除予定ファイルリスト)
+- DEPLOYMENT_GUIDE.md (デプロイガイド)
+- app/privacy/ (プライバシーポリシー)
+- app/terms/ (利用規約)
+- middleware.ts.bak (バックアップ)
+- middleware.ts.disabled (無効化版)
+
+**主要実装状況**:
+- 基本的なNext.js + Supabase構成が完了
+- 認証システムの基盤実装済み
+- 音ゲー画面コンポーネント作成中
+- ファイルアップロード機能の検討段階
+
+**技術スタック確定**:
+- Next.js 15.4.6
+- TypeScript
+- Tailwind CSS
+- Supabase (Auth/DB)
+- Web Audio API (予定)
+
+**次回の開発フォーカス**:
+- MVP機能の完成に向けた実装継続
+- 音楽解析・譜面生成アルゴリズムの実装
+- モバイル対応の強化
+
 ---
 
-**最終更新**: 2025-08-15  
-**バージョン**: 1.0
+**最終更新**: 2025-08-20  
+**バージョン**: 1.1

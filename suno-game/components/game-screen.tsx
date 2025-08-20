@@ -66,6 +66,9 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
     glowIntensity: number
   }[]>([]);
 
+  // キー表示設定
+  const [showKeyLabels, setShowKeyLabels] = useState(true);
+
   const LANE_COUNT = 4;
   const NOTE_SPEED = 100; // ピクセル/秒（遅くして簡単に）
   const JUDGMENT_LINE = typeof window !== 'undefined' ? window.innerHeight - 150 : 700; // 画面下部から150px上に配置
@@ -555,6 +558,12 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
     notesRef.current = notes;
   }, [notes]);
 
+  // Hit sound function (useEffectより前に定義)
+  const playHitSound = () => {
+    // 旧関数を新関数で置き換え
+    playEnhancedHitSound(0);
+  };
+
   // キーボードイベントの設定（シンプル版）
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -777,13 +786,21 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
           }]);
           
           // 色別・タイプ別パーティクル生成
-          const newParticles = [];
+          const newParticles: Array<{
+            id: string;
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            time: number;
+            emoji: string;
+          }> = [];
           let particleCount = 15; // 基本数
           let particleEmojis = ['💖', '💕', '💗', '💓', '💘', '🌟', '✨', '💫', '⭐', '🎉'];
           
           if (shouldExplode && explosionColor) {
             // 色別爆発の場合
-            const currentColorCombo = colorCombos[explosionColor] + 1;
+            const currentColorCombo = colorCombos[explosionColor as keyof typeof colorCombos] + 1;
             particleCount = currentColorCombo === 3 ? 10 : 25; // ミニ爆発10個、メガ爆発25個
             
             // 色別パーティクル
@@ -830,7 +847,15 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
           for (let ring = 0; ring < 2; ring++) {
             const ringDelay = ring * 100; // 0.1秒間隔で2つの輪
             setTimeout(() => {
-              const ringParticles = [];
+              const ringParticles: Array<{
+                id: string;
+                x: number;
+                y: number;
+                vx: number;
+                vy: number;
+                time: number;
+                emoji: string;
+              }> = [];
               for (let i = 0; i < 12; i++) {
                 const angle = (Math.PI * 2 * i) / 12;
                 const speed = 180 + ring * 60;
@@ -947,7 +972,15 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
               }, 1000);
               
               // 連鎖パーティクル
-              const chainParticles = [];
+              const chainParticles: Array<{
+                id: string;
+                x: number;
+                y: number;
+                vx: number;
+                vy: number;
+                time: number;
+                emoji: string;
+              }> = [];
               for (let j = 0; j < 15; j++) {
                 const angle = (Math.PI * 2 * j) / 15;
                 const speed = 80 + Math.random() * 120;
@@ -1079,7 +1112,7 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
           }
           
         } catch (error) {
-          console.log('🎮 Epic effect failed:', error);
+          console.log('🎮 Epic effect failed:', error instanceof Error ? error.message : 'Unknown error');
         }
         
       } else {
@@ -1118,7 +1151,8 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
       window.removeEventListener('keydown', handleKeyDown);
       console.log('🎮 Keyboard listener removed');
     };
-  }, [gameStarted, notes, score, comboCount, colorCombos, lastKeyTime]); // 完全な依存関係
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameStarted, notes, score, comboCount, colorCombos, lastKeyTime, JUDGMENT_LINE, starAccumulation.length]); // 完全な依存関係
 
   const startGame = async () => {
     console.log('Starting game...');
@@ -1481,7 +1515,15 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
             }, 1200);
             
             // 豪華連鎖パーティクル
-            const chainParticles = [];
+            const chainParticles: Array<{
+              id: string;
+              x: number;
+              y: number;
+              vx: number;
+              vy: number;
+              time: number;
+              emoji: string;
+            }> = [];
             const particleCount = 20 + newComboCount * 2; // コンボで増加
             
             for (let j = 0; j < particleCount; j++) {
@@ -1845,8 +1887,10 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
       
     } catch (error) {
       console.error('🎺❌ Symphogear combo sound FAILED:', error);
-      console.error('Error details:', error.message);
-      console.error('Error stack:', error.stack);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
     }
   };
 
@@ -1967,13 +2011,8 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
       console.log('🎭💥 ULTIMATE SYMPHOGEAR SOUND COMPLETE! Duration: 12 seconds');
       
     } catch (error) {
-      console.error('🎭❌ Ultimate Symphogear sound FAILED:', error);
+      console.error('🎭❌ Ultimate Symphogear sound FAILED:', error instanceof Error ? error.message : 'Unknown error');
     }
-  };
-
-  const playHitSound = () => {
-    // 旧関数を新関数で置き換え
-    playEnhancedHitSound(0);
   };
 
   const drawGameWithNotes = (currentNotes: Note[], currentTime: number) => {
@@ -2076,7 +2115,7 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
     // 🌟 コンボ蓄積⭐描画（超豪華版）
     starAccumulation.forEach((star, index) => {
       const elapsed = Date.now() - star.time;
-      const age = elapsed / 1000; // 秒
+      // const age = elapsed / 1000; // 秒 (未使用のため一時的にコメントアウト)
       
       // 時間経過で回転・脈動
       const rotationSpeed = 50 + index * 10; // 個別の回転速度
@@ -2506,10 +2545,10 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
     }
   };
 
-  // 後方互換性のための関数（useCallbackでメモ化）
-  const drawGame = useCallback(() => {
-    drawGameWithNotes(notes, gameTime);
-  }, [notes, gameTime, comboCount, hitEffects, explosionEffects, heartParticles]); // 描画に必要な全ての依存関係
+  // 後方互換性のための関数（未使用のためコメントアウト）
+  // const drawGame = useCallback(() => {
+  //   drawGameWithNotes(notes, gameTime);
+  // }, [notes, gameTime, comboCount, hitEffects, explosionEffects, heartParticles, drawGameWithNotes]);
 
   // Canvas描画の更新を削除（ゲームループ内で描画するため重複）
 
@@ -2641,13 +2680,37 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
           }} variant="outline" size="sm">
             戻る
           </Button>
+          
+          {/* キー表示切り替えボタン */}
+          <Button 
+            onClick={() => setShowKeyLabels(!showKeyLabels)}
+            variant="outline" 
+            size="sm"
+            className="ml-2"
+          >
+            {showKeyLabels ? "キー非表示" : "キー表示"}
+          </Button>
         </div>
 
         {!gameStarted && (
           <div className="absolute inset-0 flex items-center justify-center z-20 bg-black bg-opacity-75">
             <div className="text-center max-w-sm mx-4">
               <h2 className="text-2xl font-bold mb-4">ゲーム準備完了！</h2>
-              <p className="mb-4">落ちてくるノーツをタイミングよくタップしよう</p>
+              <p className="mb-2">落ちてくるノーツをタイミングよくタップしよう</p>
+              
+              {/* 操作説明 */}
+              <div className="mb-4 p-3 bg-black bg-opacity-50 rounded-lg">
+                <p className="text-sm text-gray-200 mb-2">キーボード操作：</p>
+                <div className="flex justify-center space-x-2">
+                  {['A', 'S', 'D', 'F'].map((key, i) => (
+                    <div key={i} className={`w-8 h-8 ${['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500'][i]} rounded flex items-center justify-center text-black font-bold text-sm`}>
+                      {key}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-300 mt-2">スマホ：画面下のボタンをタップ</p>
+              </div>
+              
               <Button onClick={startGame} size="lg" className="w-full">
                 スタート
               </Button>
@@ -2671,10 +2734,25 @@ export function GameScreen({ audioFile, onGameEnd, onBack }: GameScreenProps) {
                   handleLaneTap(i);
                 }}
               >
-                <div className={`w-8 h-8 ${colors[i]} rounded-full flex items-center justify-center text-black font-bold text-lg mb-1`}>
+                {/* キー表示（ASDF） */}
+                {showKeyLabels && (
+                  <div className="mb-2">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 ${colors[i]} rounded-lg flex items-center justify-center text-black font-bold text-lg sm:text-xl shadow-lg`}>
+                      {i === 0 && "A"}
+                      {i === 1 && "S"}
+                      {i === 2 && "D"}
+                      {i === 3 && "F"}
+                    </div>
+                  </div>
+                )}
+                
+                {/* レーン番号（小さく） */}
+                <div className={`w-6 h-6 ${colors[i]} rounded-full flex items-center justify-center text-black font-bold text-sm mb-1`}>
                   {i + 1}
                 </div>
-                <div className="text-white text-xs font-semibold">
+                
+                {/* ポジション表示（さらに小さく） */}
+                <div className="text-white text-xs font-semibold opacity-75">
                   {i === 0 && "左端"}
                   {i === 1 && "左中央"}
                   {i === 2 && "右中央"}

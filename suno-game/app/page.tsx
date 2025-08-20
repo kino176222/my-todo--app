@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GameScreen } from "@/components/game-screen";
@@ -16,13 +17,25 @@ export default function Home() {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === "audio/mpeg") {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setAudioUrl(url);
-    } else {
+    if (!file) return;
+    
+    // ファイルタイプチェック
+    if (file.type !== "audio/mpeg") {
       alert("MP3ファイルを選択してください");
+      return;
     }
+    
+    // ファイルサイズチェック（10MB = 10 * 1024 * 1024 bytes）
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert(`ファイルサイズが大きすぎます。10MB以下のファイルを選択してください。\n現在のファイルサイズ: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      event.target.value = ''; // inputをリセット
+      return;
+    }
+    
+    setSelectedFile(file);
+    const url = URL.createObjectURL(file);
+    setAudioUrl(url);
   };
 
   const startGame = () => {
@@ -142,6 +155,27 @@ export default function Home() {
                   </Button>
                 </div>
               )}
+            </div>
+            
+            {/* プライバシーポリシーと利用規約へのリンク */}
+            <div className="text-center pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6">
+                <Link 
+                  href="/privacy" 
+                  className="text-sm text-gray-600 hover:text-gray-800 underline transition-colors"
+                >
+                  プライバシーポリシー・セキュリティ
+                </Link>
+                <Link 
+                  href="/terms" 
+                  className="text-sm text-gray-600 hover:text-gray-800 underline transition-colors"
+                >
+                  利用規約
+                </Link>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                このアプリは完全無料・データ非保存です
+              </p>
             </div>
           </CardContent>
         </Card>
